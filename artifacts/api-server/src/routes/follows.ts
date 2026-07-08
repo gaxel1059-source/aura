@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { eq, and, sql } from "drizzle-orm";
 import { db, usersTable, followsTable, notificationsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
+import { broadcast } from "../lib/websocket";
 
 const router: IRouter = Router();
 
@@ -19,7 +20,12 @@ router.post("/users/:username/follow", requireAuth, async (req, res): Promise<vo
   }
 
   const [viewer] = await db
-    .select({ id: usersTable.id })
+    .select({
+      id: usersTable.id,
+      username: usersTable.username,
+      displayName: usersTable.displayName,
+      avatarUrl: usersTable.avatarUrl,
+    })
     .from(usersTable)
     .where(eq(usersTable.clerkId, clerkId));
 
@@ -87,6 +93,14 @@ router.post("/users/:username/follow", requireAuth, async (req, res): Promise<vo
       actorId: viewer.id,
       type: "follow",
     }).catch(() => {});
+
+    broadcast(target.id, {
+      type: "notification:new",
+      payload: {
+        type: "follow",
+        actor: { id: viewer.id, username: viewer.username, displayName: viewer.displayName, avatarUrl: viewer.avatarUrl },
+      },
+    });
 
     res.json({ following: true, followersCount: updated?.followersCount ?? 0 });
   }

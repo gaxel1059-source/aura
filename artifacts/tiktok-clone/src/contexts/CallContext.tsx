@@ -24,9 +24,15 @@ interface CallContextValue {
 
 const CallCtx = createContext<CallContextValue | null>(null);
 
+// STUN alone can't traverse symmetric NATs / restrictive firewalls — calls
+// would hang at "connecting" forever with no relay fallback. OpenRelay's free
+// public TURN server covers that case (fine for low-volume/dev use).
 const ICE_SERVERS: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
+  { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+  { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
 ];
 
 export function CallProvider({ children }: { children: React.ReactNode }) {

@@ -72,7 +72,11 @@ export function VideoCard({ video, isActive, currentUserId, onDelete }: VideoCar
         videoRef.current.currentTime = 0;
       }
     }
-  }, [isActive, video.id, recordView]);
+    // recordView intentionally omitted — it's a mutation callback that may not
+    // be reference-stable across renders; including it re-ran this effect (and
+    // re-called .play()) on every unrelated re-render, overriding manual pause.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive, video.id]);
 
   // Sync volume + muted to the underlying <video> element imperatively
   // (React's muted prop is an attribute, not a property — must set both)

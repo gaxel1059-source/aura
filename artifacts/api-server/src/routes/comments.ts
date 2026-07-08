@@ -4,6 +4,7 @@ import { eq, lt, desc, and, sql } from "drizzle-orm";
 import { db, videosTable, usersTable, commentsTable, notificationsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
 import { AddCommentBody } from "@workspace/api-zod";
+import { broadcast } from "../lib/websocket";
 
 const router: IRouter = Router();
 
@@ -89,7 +90,7 @@ router.post("/videos/:id/comments", requireAuth, async (req, res): Promise<void>
   }
 
   const [video] = await db
-    .select({ id: videosTable.id, userId: videosTable.userId })
+    .select({ id: videosTable.id, userId: videosTable.userId, title: videosTable.title })
     .from(videosTable)
     .where(eq(videosTable.id, videoId));
 
@@ -120,6 +121,16 @@ router.post("/videos/:id/comments", requireAuth, async (req, res): Promise<void>
       videoId,
       commentId: comment.id,
     }).catch(() => {});
+
+    broadcast(video.userId, {
+      type: "notification:new",
+      payload: {
+        type: "comment",
+        actor: { id: viewer.id, username: viewer.username, displayName: viewer.displayName, avatarUrl: viewer.avatarUrl },
+        videoId,
+        videoTitle: video.title,
+      },
+    });
   }
 
   res.status(201).json({

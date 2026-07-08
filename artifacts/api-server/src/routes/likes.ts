@@ -3,6 +3,7 @@ import { getAuth } from "@clerk/express";
 import { eq, and, sql } from "drizzle-orm";
 import { db, videosTable, usersTable, likesTable, notificationsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
+import { broadcast } from "../lib/websocket";
 
 const router: IRouter = Router();
 
@@ -18,7 +19,12 @@ router.post("/videos/:id/like", requireAuth, async (req, res): Promise<void> => 
   }
 
   const [viewer] = await db
-    .select({ id: usersTable.id })
+    .select({
+      id: usersTable.id,
+      username: usersTable.username,
+      displayName: usersTable.displayName,
+      avatarUrl: usersTable.avatarUrl,
+    })
     .from(usersTable)
     .where(eq(usersTable.clerkId, clerkId));
 
@@ -28,7 +34,12 @@ router.post("/videos/:id/like", requireAuth, async (req, res): Promise<void> => 
   }
 
   const [video] = await db
-    .select({ id: videosTable.id, userId: videosTable.userId, likesCount: videosTable.likesCount })
+    .select({
+      id: videosTable.id,
+      userId: videosTable.userId,
+      likesCount: videosTable.likesCount,
+      title: videosTable.title,
+    })
     .from(videosTable)
     .where(eq(videosTable.id, videoId));
 
@@ -84,6 +95,16 @@ router.post("/videos/:id/like", requireAuth, async (req, res): Promise<void> => 
         type: "like",
         videoId,
       }).catch(() => {});
+
+      broadcast(video.userId, {
+        type: "notification:new",
+        payload: {
+          type: "like",
+          actor: { id: viewer.id, username: viewer.username, displayName: viewer.displayName, avatarUrl: viewer.avatarUrl },
+          videoId,
+          videoTitle: video.title,
+        },
+      });
     }
 
     res.json({ liked: true, likesCount: updated?.likesCount ?? 0 });

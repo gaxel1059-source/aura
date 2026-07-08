@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/toaster";
 import { CallProvider } from "@/contexts/CallContext";
 import { CallModal } from "@/components/CallModal";
+import { NotificationToastListener } from "@/components/NotificationToastListener";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
@@ -163,6 +164,7 @@ function ClerkProviderWithRoutes() {
             </div>
             {/* Call modal rendered outside the scroll container so it covers everything */}
             <CallModal />
+            <NotificationToastListener />
             <Toaster />
           </TooltipProvider>
         </CallProvider>

@@ -8,6 +8,7 @@ import {
   notificationsTable,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/requireAuth";
+import { broadcast } from "../lib/websocket";
 
 const router: IRouter = Router();
 
@@ -190,6 +191,14 @@ router.post("/friends/request", requireAuth, async (req, res): Promise<void> => 
     read: false,
   });
 
+  broadcast(addresseeId, {
+    type: "notification:new",
+    payload: {
+      type: "friend_request",
+      actor: { id: viewer.id, username: viewer.username, displayName: viewer.displayName, avatarUrl: viewer.avatarUrl },
+    },
+  });
+
   res.status(201).json({ friendship });
 });
 
@@ -227,6 +236,14 @@ router.post("/friends/requests/:id/accept", requireAuth, async (req, res): Promi
     actorId: viewer.id,
     type: "friend_accept",
     read: false,
+  });
+
+  broadcast(row.requesterId, {
+    type: "notification:new",
+    payload: {
+      type: "friend_accept",
+      actor: { id: viewer.id, username: viewer.username, displayName: viewer.displayName, avatarUrl: viewer.avatarUrl },
+    },
   });
 
   res.json({ friendship: updated });

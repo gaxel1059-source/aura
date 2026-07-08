@@ -9,7 +9,15 @@ export type WsIncomingEvent =
   | { type: "call:answer"; payload: { to: number; answer: RTCSessionDescriptionInit } }
   | { type: "call:ice-candidate"; payload: { to: number; candidate: RTCIceCandidateInit } }
   | { type: "call:end"; payload: { to: number } }
-  | { type: "call:reject"; payload: { to: number } };
+  | { type: "call:reject"; payload: { to: number } }
+  | { type: "notification:new"; payload: NotificationPayload };
+
+export interface NotificationPayload {
+  type: "like" | "follow" | "comment" | "friend_request" | "friend_accept";
+  actor: { id: number; username: string; displayName: string; avatarUrl: string | null };
+  videoId?: number;
+  videoTitle?: string | null;
+}
 
 export interface MessagePayload {
   id: number;
