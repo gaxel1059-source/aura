@@ -189,11 +189,31 @@ export class ObjectStorageService {
   }
 
   async getObjectEntityUploadURL(): Promise<string> {
-    const privateObjectDir = this.getPrivateObjectDir();
-    const objectId = randomUUID();
-    const fullPath = `${privateObjectDir}/uploads/${objectId}`;
-    const ref = parseObjectPath(fullPath);
+    const { ref } = this.buildNewUploadRef();
 
+    return getSignedUrl(
+      objectStorageClient,
+      new PutObjectCommand({ Bucket: ref.bucket, Key: ref.key }),
+      { expiresIn: 900 },
+    );
+  }
+
+  // Deterministic ref for a fresh upload, split out so the proxy-upload route
+  // (server streams the bytes itself — the browser never talks to the bucket
+  // directly, sidestepping the bucket's CORS setup entirely) can reconstruct
+  // the same object location from just the objectId.
+  buildNewUploadRef(): { objectId: string; ref: ObjectRef } {
+    const objectId = randomUUID();
+    return { objectId, ref: this.buildUploadRefForId(objectId) };
+  }
+
+  buildUploadRefForId(objectId: string): ObjectRef {
+    const privateObjectDir = this.getPrivateObjectDir();
+    const fullPath = `${privateObjectDir}/uploads/${objectId}`;
+    return parseObjectPath(fullPath);
+  }
+
+  async getPresignedPutUrl(ref: ObjectRef): Promise<string> {
     return getSignedUrl(
       objectStorageClient,
       new PutObjectCommand({ Bucket: ref.bucket, Key: ref.key }),

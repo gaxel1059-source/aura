@@ -18,9 +18,11 @@ const objectStorageService = new ObjectStorageService();
 /**
  * POST /storage/uploads/request-url
  *
- * Request a presigned URL for file upload.
- * The client sends JSON metadata (name, size, contentType) — NOT the file.
- * Then uploads the file directly to the returned presigned URL.
+ * Mints an objectId and returns a same-origin upload URL — the browser PUTs
+ * the file to this server (see /storage/uploads/proxy/:objectId below),
+ * which then streams it to the bucket server-to-server. This sidesteps the
+ * bucket's own CORS setup entirely: the browser never talks to the bucket
+ * directly, only to this API.
  * Requires Clerk auth so public callers cannot mint write-capable URLs.
  */
 router.post(
@@ -41,20 +43,72 @@ router.post(
     try {
       const { name, size, contentType } = parsed.data;
 
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      const objectPath =
-        objectStorageService.normalizeObjectEntityPath(uploadURL);
+      const { objectId } = objectStorageService.buildNewUploadRef();
 
       res.json(
         RequestUploadUrlResponse.parse({
-          uploadURL,
-          objectPath,
+          uploadURL: `/api/storage/uploads/proxy/${objectId}`,
+          objectPath: `/objects/uploads/${objectId}`,
           metadata: { name, size, contentType },
         }),
       );
     } catch (error) {
       req.log.error({ err: error }, 'Error generating upload URL');
       res.status(500).json({ error: 'Failed to generate upload URL' });
+    }
+  },
+);
+
+/**
+ * PUT /storage/uploads/proxy/:objectId
+ *
+ * Receives the file bytes from the browser (same-origin, no CORS) and
+ * streams them on to the bucket using a freshly-signed URL. objectId must
+ * match one just minted by /storage/uploads/request-url — the bucket path
+ * is rebuilt deterministically from it, so there's nothing to look up.
+ */
+router.put(
+  '/storage/uploads/proxy/:objectId',
+  async (req: Request, res: Response) => {
+    const auth = getAuth(req);
+    if (!auth?.userId) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    try {
+      const objectId = Array.isArray(req.params.objectId)
+        ? req.params.objectId[0]
+        : req.params.objectId;
+      const ref = objectStorageService.buildUploadRefForId(objectId);
+      const presignedUrl = await objectStorageService.getPresignedPutUrl(ref);
+
+      const upstream = await fetch(presignedUrl, {
+        method: 'PUT',
+        duplex: 'half',
+        body: req,
+        headers: {
+          'Content-Type':
+            req.headers['content-type'] || 'application/octet-stream',
+          // Required by the bucket — without it the upstream PUT is
+          // rejected with 411 Length Required.
+          'Content-Length': req.headers['content-length'] ?? '',
+        },
+      });
+
+      if (!upstream.ok) {
+        req.log.error(
+          { status: upstream.status, body: await upstream.text() },
+          'Upstream upload to bucket failed',
+        );
+        res.status(502).json({ error: 'Failed to store file' });
+        return;
+      }
+
+      res.status(204).end();
+    } catch (error) {
+      req.log.error({ err: error }, 'Error proxying upload to bucket');
+      res.status(500).json({ error: 'Failed to store file' });
     }
   },
 );
