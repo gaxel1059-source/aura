@@ -17,17 +17,15 @@ import {
   setObjectAclPolicy,
 } from './objectAcl';
 
-// Cloudflare R2 is S3-compatible: https://developers.cloudflare.com/r2/api/s3/
-const R2_ACCOUNT_ID = process.env.R2_ACCOUNT_ID;
-
+// Any S3-compatible provider works here (Backblaze B2, Cloudflare R2, MinIO, ...).
+// Backblaze B2: endpoint like https://s3.us-west-002.backblazeb2.com, region "us-west-002".
 export const objectStorageClient = new S3Client({
-  region: 'auto',
-  endpoint: R2_ACCOUNT_ID
-    ? `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
-    : undefined,
+  region: process.env.S3_REGION || 'auto',
+  endpoint: process.env.S3_ENDPOINT,
+  forcePathStyle: process.env.S3_FORCE_PATH_STYLE !== 'false',
   credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
   },
 });
 
@@ -227,17 +225,22 @@ export class ObjectStorageService {
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
-    // Presigned R2/S3 upload URLs are https://<bucket>.<account>.r2.cloudflarestorage.com/<key>?...
+    // Presigned upload URLs are absolute, pointing at our configured S3-compatible
+    // endpoint (Backblaze B2, R2, MinIO, ...). Anything else is already relative.
     let url: URL;
     try {
       url = new URL(rawPath);
     } catch {
       return rawPath;
     }
-    if (!url.hostname.endsWith('.r2.cloudflarestorage.com')) {
+    const endpoint = process.env.S3_ENDPOINT;
+    const endpointHost = endpoint ? new URL(endpoint).hostname : '';
+    if (!endpointHost || url.hostname !== endpointHost) {
       return rawPath;
     }
 
+    // Path-style URL: /<bucket>/<key> — same "/bucket/prefix" shape as
+    // PRIVATE_OBJECT_DIR below, so compare directly.
     const rawObjectPath = url.pathname;
 
     let objectEntityDir = this.getPrivateObjectDir();
