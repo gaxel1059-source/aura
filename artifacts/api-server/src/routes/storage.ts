@@ -47,7 +47,11 @@ router.post(
 
       res.json(
         RequestUploadUrlResponse.parse({
-          uploadURL: `/api/storage/uploads/proxy/${objectId}`,
+          // contentType travels as a query param rather than relying on the
+          // browser sending an accurate Content-Type header on the follow-up
+          // PUT — that header is unreliable across browsers/Blob sources (a
+          // canvas.toBlob() JPEG landed as binary/octet-stream in testing).
+          uploadURL: `/api/storage/uploads/proxy/${objectId}?contentType=${encodeURIComponent(contentType)}`,
           objectPath: `/objects/uploads/${objectId}`,
           metadata: { name, size, contentType },
         }),
@@ -83,13 +87,17 @@ router.put(
       const ref = objectStorageService.buildUploadRefForId(objectId);
       const presignedUrl = await objectStorageService.getPresignedPutUrl(ref);
 
+      const queryContentType = req.query.contentType;
+      const contentType = Array.isArray(queryContentType)
+        ? queryContentType[0]
+        : queryContentType || req.headers['content-type'] || 'application/octet-stream';
+
       const upstream = await fetch(presignedUrl, {
         method: 'PUT',
         duplex: 'half',
         body: req,
         headers: {
-          'Content-Type':
-            req.headers['content-type'] || 'application/octet-stream',
+          'Content-Type': String(contentType),
           // Required by the bucket — without it the upstream PUT is
           // rejected with 411 Length Required.
           'Content-Length': req.headers['content-length'] ?? '',

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useMessagingWebSocket, type CallOfferPayload } from "@/hooks/useMessagingWebSocket";
+import { useToast } from "@/hooks/use-toast";
 
 interface ActiveCall {
   peerId: number;
@@ -229,6 +230,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [send, rejectCall, setActiveCall]);
+
+  // Give ICE a bounded window to connect. Without this, a call that never
+  // finds a working candidate pair (e.g. a flaky/unreachable TURN relay)
+  // hangs on "connecting" forever with no feedback — the state only flips
+  // to "failed" if ICE explicitly reports it, which doesn't always happen.
+  const { toast } = useToast();
+  useEffect(() => {
+    if (activeCall?.state !== "connecting") return;
+    const timer = setTimeout(() => {
+      if (activeCallRef.current?.state === "connecting") {
+        toast({ variant: "destructive", description: "No se pudo conectar la llamada. Intenta de nuevo." });
+        endCall();
+      }
+    }, 20_000);
+    return () => clearTimeout(timer);
+  }, [activeCall?.state, endCall, toast]);
 
   // Single stable WS event handler using refs to avoid stale closure issues
   useEffect(() => {
