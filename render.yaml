@@ -4,11 +4,9 @@ services:
     runtime: node
     plan: free
     buildCommand: >-
-      corepack enable &&
-      corepack prepare pnpm@11.10.0 --activate &&
-      pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/api-server run build &&
-      BASE_PATH=/ pnpm --filter @workspace/tiktok-clone run build
+      npx pnpm@11.10.0 install --frozen-lockfile &&
+      npx pnpm@11.10.0 --filter @workspace/api-server run build &&
+      BASE_PATH=/ npx pnpm@11.10.0 --filter @workspace/tiktok-clone run build
     startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
     envVars:
       - key: NODE_ENV
