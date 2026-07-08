@@ -1,6 +1,11 @@
-import { File } from '@google-cloud/storage';
+import {
+  getObjectMetadata,
+  objectExists,
+  setObjectMetadata,
+  type ObjectRef,
+} from './objectStorage';
 
-const ACL_POLICY_METADATA_KEY = 'custom:aclPolicy';
+const ACL_POLICY_METADATA_KEY = 'aclpolicy';
 
 // Can be flexibly defined according to the use case.
 //
@@ -68,30 +73,28 @@ function createObjectAccessGroup(
 }
 
 export async function setObjectAclPolicy(
-  objectFile: File,
+  objectFile: ObjectRef,
   aclPolicy: ObjectAclPolicy,
 ): Promise<void> {
-  const [exists] = await objectFile.exists();
+  const exists = await objectExists(objectFile);
   if (!exists) {
-    throw new Error(`Object not found: ${objectFile.name}`);
+    throw new Error(`Object not found: ${objectFile.key}`);
   }
 
-  await objectFile.setMetadata({
-    metadata: {
-      [ACL_POLICY_METADATA_KEY]: JSON.stringify(aclPolicy),
-    },
+  await setObjectMetadata(objectFile, {
+    [ACL_POLICY_METADATA_KEY]: JSON.stringify(aclPolicy),
   });
 }
 
 export async function getObjectAclPolicy(
-  objectFile: File,
+  objectFile: ObjectRef,
 ): Promise<ObjectAclPolicy | null> {
-  const [metadata] = await objectFile.getMetadata();
-  const aclPolicy = metadata?.metadata?.[ACL_POLICY_METADATA_KEY];
+  const metadata = await getObjectMetadata(objectFile);
+  const aclPolicy = metadata?.[ACL_POLICY_METADATA_KEY];
   if (!aclPolicy) {
     return null;
   }
-  return JSON.parse(aclPolicy as string);
+  return JSON.parse(aclPolicy);
 }
 
 export async function canAccessObject({
@@ -100,7 +103,7 @@ export async function canAccessObject({
   requestedPermission,
 }: {
   userId?: string;
-  objectFile: File;
+  objectFile: ObjectRef;
   requestedPermission: ObjectPermission;
 }): Promise<boolean> {
   const aclPolicy = await getObjectAclPolicy(objectFile);
