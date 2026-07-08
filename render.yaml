@@ -5,6 +5,7 @@ services:
     plan: free
     buildCommand: >-
       npx pnpm@11.10.0 install --frozen-lockfile &&
+      npx pnpm@11.10.0 rebuild esbuild @clerk/shared &&
       npx pnpm@11.10.0 --filter @workspace/api-server run build &&
       BASE_PATH=/ npx pnpm@11.10.0 --filter @workspace/tiktok-clone run build
     startCommand: node --enable-source-maps artifacts/api-server/dist/index.mjs
