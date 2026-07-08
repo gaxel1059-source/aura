@@ -1,0 +1,404 @@
+Quiero que actúes como un equipo completo de desarrollo conformado por:
+
+- Arquitecto de Software Senior
+- Diseñador UX/UI especializado en redes sociales
+- Ingeniero Backend
+- Ingeniero Frontend
+- Ingeniero en Machine Learning (sistemas de recomendación)
+- Especialista en Seguridad
+- Product Manager
+
+Tu objetivo es diseñar y desarrollar una aplicación móvil completamente funcional inspirada en el éxito de TikTok e Instagram, pero SIN copiar ninguna de las dos.
+
+La aplicación debe tener identidad propia, una experiencia única y una filosofía diferente.
+
+# OBJETIVO
+
+Quiero crear una red social cuyo propósito sea que los usuarios pasen mucho tiempo dentro de la aplicación porque siempre encuentren contenido que realmente les interese.
+
+No quiero que sea simplemente una copia de TikTok.
+
+Quiero crear una plataforma moderna donde el algoritmo conozca poco a poco los gustos del usuario y vaya mejorando constantemente las recomendaciones.
+
+Debe sentirse fresca, minimalista, elegante y muy adictiva de usar.
+
+---
+
+# TECNOLOGÍAS
+
+Tú puedes elegir las mejores tecnologías actuales para el proyecto.
+
+Prioriza:
+
+- escalabilidad
+- rendimiento
+- seguridad
+- facilidad de mantenimiento
+- arquitectura limpia
+
+Puedes utilizar por ejemplo:
+
+Frontend:
+Flutter
+
+Backend:
+Firebase o Supabase o Node.js
+
+Base de datos:
+Firestore o PostgreSQL
+
+Storage:
+Cloud Storage
+
+Autenticación:
+Google Sign In
+Correo y contraseña
+Apple ID (preparar soporte)
+
+---
+
+# INTERFAZ
+
+Quiero un diseño completamente minimalista.
+
+No quiero una interfaz saturada.
+
+Debe sentirse moderna.
+
+Elegante.
+
+Muy fluida.
+
+Con animaciones suaves.
+
+Inspirada en las mejores aplicaciones actuales.
+
+Quiero que el usuario disfrute navegar por la aplicación.
+
+No quiero colores fuertes.
+
+Utiliza una paleta limpia.
+
+Mucho espacio.
+
+Buenas tipografías.
+
+Botones modernos.
+
+Transiciones premium.
+
+---
+
+# FUNCIONES
+
+Debe permitir:
+
+Crear cuenta
+
+Iniciar sesión con Google
+
+Cerrar sesión
+
+Editar perfil
+
+Foto de perfil
+
+Biografía
+
+Nombre de usuario
+
+Cambiar foto
+
+Seguir usuarios
+
+Dejar de seguir
+
+Buscar usuarios
+
+Buscar contenido
+
+Publicar videos
+
+Subir miniatura
+
+Agregar descripción
+
+Agregar hashtags
+
+Agregar ubicación opcional
+
+Comentarios
+
+Likes
+
+Compartir
+
+Guardar publicaciones
+
+Historial
+
+Notificaciones
+
+Mensajes privados
+
+Reacciones
+
+Reportar contenido
+
+Bloquear usuarios
+
+Eliminar publicaciones
+
+Editar publicaciones
+
+Perfil completamente funcional
+
+Número de seguidores
+
+Seguidos
+
+Likes obtenidos
+
+Videos publicados
+
+---
+
+# VIDEOS
+
+NO quiero videos de prueba.
+
+NO quiero videos falsos.
+
+NO quiero placeholders.
+
+Cuando el usuario entra por primera vez, el feed puede estar vacío o mostrar contenido destacado real cuando exista.
+
+Todo el contenido debe provenir únicamente de usuarios reales que publiquen dentro de la plataforma.
+
+Cualquier usuario puede subir videos.
+
+No habrá límite de duración.
+
+La plataforma deberá soportar desde videos cortos hasta videos muy largos.
+
+El procesamiento debe optimizar calidad y peso para una reproducción fluida.
+
+---
+
+# FEED
+
+Quiero un sistema de recomendaciones inteligente.
+
+No cronológico.
+
+No aleatorio.
+
+Debe aprender constantemente.
+
+Debe analizar:
+
+Likes
+
+Tiempo viendo un video
+
+Si terminó el video
+
+Comentarios
+
+Veces que comparte
+
+Veces que guarda
+
+Búsquedas
+
+Perfiles visitados
+
+Categorías favoritas
+
+Frecuencia de uso
+
+Horario de conexión
+
+Temáticas preferidas
+
+Frecuencia con la que desliza rápidamente un video
+
+Todo esto debe alimentar el algoritmo.
+
+Mientras más use la aplicación, mejores recomendaciones debe recibir.
+
+Quiero que expliques cómo implementar este algoritmo.
+
+---
+
+# ALGORITMO
+
+Diseña un algoritmo moderno de recomendación.
+
+Debe combinar:
+
+Machine Learning
+
+Sistema de puntuación
+
+Embeddings
+
+Intereses
+
+Categorías
+
+Contenido similar
+
+Popularidad
+
+Tendencias
+
+Usuarios similares
+
+Cold Start para nuevos usuarios
+
+Cold Start para nuevos creadores
+
+Quiero que expliques toda la lógica.
+
+---
+
+# DIFERENCIADOR
+
+No quiero copiar TikTok.
+
+No quiero copiar Instagram.
+
+Quiero que propongas características originales que hagan que esta red social tenga personalidad propia.
+
+Por ejemplo:
+
+Nuevas formas de descubrir contenido.
+
+Nuevos sistemas de interacción.
+
+Nuevos perfiles.
+
+Nuevas estadísticas.
+
+Formas distintas de recomendar contenido.
+
+Ideas innovadoras.
+
+Propón al menos 20 funciones originales que puedan diferenciar la aplicación.
+
+---
+
+# RENDIMIENTO
+
+La aplicación debe ser extremadamente rápida.
+
+Carga progresiva.
+
+Cache inteligente.
+
+Lazy Loading.
+
+Compresión de video.
+
+Optimización de imágenes.
+
+Scroll infinito.
+
+Reproducción instantánea.
+
+---
+
+# SEGURIDAD
+
+Implementa:
+
+JWT si aplica
+
+Protección contra spam
+
+Protección contra bots
+
+Rate Limiting
+
+Moderación automática
+
+Reporte de contenido
+
+Filtro de lenguaje ofensivo
+
+Detección de contenido ilegal
+
+Permisos correctamente separados
+
+---
+
+# BASE DE DATOS
+
+Diseña completamente la estructura.
+
+Colecciones.
+
+Tablas.
+
+Relaciones.
+
+Índices.
+
+Optimización.
+
+---
+
+# CÓDIGO
+
+Quiero código limpio.
+
+Arquitectura escalable.
+
+Principios SOLID.
+
+Clean Architecture.
+
+MVVM o la arquitectura que consideres mejor.
+
+Código comentado.
+
+Modular.
+
+Fácil de mantener.
+
+---
+
+# EXPERIENCIA DE USUARIO
+
+Cada detalle debe estar pensado para aumentar la retención del usuario sin utilizar prácticas engañosas.
+
+La navegación debe sentirse natural.
+
+Las animaciones deben ser suaves.
+
+El cambio entre pantallas debe ser elegante.
+
+El usuario nunca debe sentirse perdido.
+
+---
+
+# DESARROLLO
+
+No desarrolles todo de golpe.
+
+Quiero que construyas el proyecto paso a paso.
+
+Cada paso debe quedar completamente funcional antes de continuar.
+
+Si detectas errores, corrígelos antes de seguir.
+
+No generes código incompleto.
+
+No omitas archivos importantes.
+
+Quiero que el proyecto pueda compilarse en cualquier momento del desarrollo.
+
+Cuando terminemos una etapa, continuaremos con la siguiente.
+
+Actúa como si estuvieras desarrollando una aplicación que aspira a competir con las redes sociales más importantes del mercado, pero con una identidad completamente nueva.

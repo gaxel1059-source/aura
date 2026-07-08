@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "TikTok Clone"
+version = "1.0.0"
+id = "artifacts/tiktok-clone"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25349
+
+[services.development]
+run = "pnpm --filter @workspace/tiktok-clone run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/tiktok-clone", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/tiktok-clone/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25349"
+BASE_PATH = "/"

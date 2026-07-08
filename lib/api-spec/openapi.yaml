@@ -1,0 +1,1054 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Aura social platform API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: users
+    description: User profile operations
+  - name: videos
+    description: Video upload and feed operations
+  - name: storage
+    description: Object storage upload and serving endpoints
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserProfileInput"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/me/sync:
+    post:
+      operationId: syncMe
+      tags: [users]
+      summary: Sync Clerk user to local DB (JIT provisioning)
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: User synced
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/search:
+    get:
+      operationId: searchUsers
+      tags: [users]
+      summary: Search users by username or display name
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSearchPage"
+
+  /users/{username}:
+    get:
+      operationId: getUserByUsername
+      tags: [users]
+      summary: Get public user profile by username
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{username}/followers:
+    get:
+      operationId: getUserFollowers
+      tags: [users]
+      summary: Get followers of a user
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Followers list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSearchPage"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{username}/following:
+    get:
+      operationId: getUserFollowing
+      tags: [users]
+      summary: Get users that a user follows
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Following list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSearchPage"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{username}/videos:
+    get:
+      operationId: getUserVideos
+      tags: [users]
+      summary: Get videos for a specific user
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 12
+      responses:
+        "200":
+          description: User video feed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPage"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /users/{username}/follow:
+    post:
+      operationId: toggleFollow
+      tags: [users]
+      summary: Toggle follow on a user
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Follow toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FollowResponse"
+        "400":
+          description: Bad request (e.g. following yourself)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [users]
+      summary: Get notifications for current user
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Last seen notification ID for cursor pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Notifications page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationPage"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [users]
+      summary: Mark all notifications as read
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: All marked read
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /notifications/unread-count:
+    get:
+      operationId: getUnreadNotificationCount
+      tags: [users]
+      summary: Get count of unread notifications
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnreadCountResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /videos:
+    get:
+      operationId: getFeed
+      tags: [videos]
+      summary: Get paginated video feed
+      parameters:
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Last seen video ID for cursor pagination
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: mode
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [for_you, following]
+          description: Feed mode — "following" returns only videos from followed users (requires auth)
+      responses:
+        "200":
+          description: Video feed page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedPage"
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Create a video record after upload
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVideoBody"
+      responses:
+        "201":
+          description: Video created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /videos/{id}:
+    get:
+      operationId: getVideo
+      tags: [videos]
+      summary: Get a single video by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Video
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteVideo
+      tags: [videos]
+      summary: Delete own video
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /videos/{id}/view:
+    post:
+      operationId: recordView
+      tags: [videos]
+      summary: Record a view on a video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: View recorded
+
+  /videos/{id}/like:
+    post:
+      operationId: toggleLike
+      tags: [videos]
+      summary: Toggle like on a video
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Like toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /videos/{id}/comments:
+    get:
+      operationId: getComments
+      tags: [videos]
+      summary: Get comments for a video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: cursor
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Comments page
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommentPage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: addComment
+      tags: [videos]
+      summary: Add a comment to a video
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCommentBody"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /videos/{id}/comments/{commentId}:
+    delete:
+      operationId: deleteComment
+      tags: [videos]
+      summary: Delete own comment
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /storage/uploads/request-url:
+    post:
+      tags: [storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Presigned upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /storage/objects/{objectPath}:
+    get:
+      tags: [storage]
+      operationId: getStorageObject
+      summary: Serve an uploaded object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object content
+          content:
+            "*/*":
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: __session
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        username:
+          type: string
+        displayName:
+          type: string
+        bio:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        followersCount:
+          type: integer
+        followingCount:
+          type: integer
+        likesCount:
+          type: integer
+        isFollowing:
+          type: boolean
+          description: Whether the current user follows this profile (omitted if unauthenticated or own profile)
+        createdAt:
+          type: string
+      required:
+        - id
+        - clerkId
+        - username
+        - displayName
+        - bio
+        - avatarUrl
+        - followersCount
+        - followingCount
+        - likesCount
+        - createdAt
+
+    UserProfileInput:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 60
+        bio:
+          type: string
+          maxLength: 300
+        avatarUrl:
+          type: string
+          description: Object storage path for the avatar image
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: ["string", "null"]
+        description:
+          type: ["string", "null"]
+        videoPath:
+          type: string
+        thumbnailPath:
+          type: ["string", "null"]
+        duration:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [processing, ready, failed]
+        viewsCount:
+          type: integer
+        likesCount:
+          type: integer
+        commentsCount:
+          type: integer
+        isLiked:
+          type: boolean
+          description: Whether the current user liked this video (false if unauthenticated)
+        createdAt:
+          type: string
+        author:
+          $ref: "#/components/schemas/VideoAuthor"
+      required:
+        - id
+        - userId
+        - videoPath
+        - status
+        - viewsCount
+        - likesCount
+        - commentsCount
+        - isLiked
+        - createdAt
+
+    VideoAuthor:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+      required:
+        - id
+        - username
+        - displayName
+        - avatarUrl
+
+    FeedPage:
+      type: object
+      properties:
+        videos:
+          type: array
+          items:
+            $ref: "#/components/schemas/Video"
+        nextCursor:
+          type: ["integer", "null"]
+      required:
+        - videos
+        - nextCursor
+
+    CreateVideoBody:
+      type: object
+      properties:
+        videoPath:
+          type: string
+        thumbnailPath:
+          type: string
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        duration:
+          type: integer
+      required:
+        - videoPath
+
+    LikeResponse:
+      type: object
+      properties:
+        liked:
+          type: boolean
+        likesCount:
+          type: integer
+      required:
+        - liked
+        - likesCount
+
+    FollowResponse:
+      type: object
+      properties:
+        following:
+          type: boolean
+        followersCount:
+          type: integer
+      required:
+        - following
+        - followersCount
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: integer
+        videoId:
+          type: integer
+        userId:
+          type: integer
+        text:
+          type: string
+        createdAt:
+          type: string
+        author:
+          $ref: "#/components/schemas/VideoAuthor"
+      required:
+        - id
+        - videoId
+        - userId
+        - text
+        - createdAt
+        - author
+
+    CommentPage:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        nextCursor:
+          type: ["integer", "null"]
+      required:
+        - comments
+        - nextCursor
+
+    AddCommentBody:
+      type: object
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 500
+      required:
+        - text
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [like, follow, comment]
+        read:
+          type: boolean
+        createdAt:
+          type: string
+        actor:
+          $ref: "#/components/schemas/VideoAuthor"
+        videoId:
+          type: ["integer", "null"]
+        commentId:
+          type: ["integer", "null"]
+        videoTitle:
+          type: ["string", "null"]
+      required:
+        - id
+        - type
+        - read
+        - createdAt
+        - actor
+
+    NotificationPage:
+      type: object
+      properties:
+        notifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        nextCursor:
+          type: ["integer", "null"]
+      required:
+        - notifications
+        - nextCursor
+
+    UnreadCountResponse:
+      type: object
+      properties:
+        count:
+          type: integer
+      required:
+        - count
+
+    UserSearchPage:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserProfile"
+        nextCursor:
+          type: ["integer", "null"]
+      required:
+        - users
+        - nextCursor
+
+    UploadUrlRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+      required:
+        - name
+        - size
+        - contentType
+
+    UploadUrlResponse:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+      required:
+        - uploadURL
+        - objectPath
