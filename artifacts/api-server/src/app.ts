@@ -1,3 +1,5 @@
+import path from "path";
+import fs from "fs";
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
@@ -51,5 +53,20 @@ app.use(
 );
 
 app.use("/api", router);
+
+// In production, this same server also serves the built frontend so it
+// shares one origin — Clerk's session cookie only round-trips same-origin.
+if (process.env.NODE_ENV === "production") {
+  const staticDir = path.resolve(
+    import.meta.dirname,
+    "../../tiktok-clone/dist/public",
+  );
+  if (fs.existsSync(staticDir)) {
+    app.use(express.static(staticDir));
+    app.get(/^\/(?!api\/).*/, (_req, res) => {
+      res.sendFile(path.join(staticDir, "index.html"));
+    });
+  }
+}
 
 export default app;
